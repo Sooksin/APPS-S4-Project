@@ -17,12 +17,10 @@ void wifi_init() {
   WiFi.setHostname(wifiname);
 }
 
-void printTimePeriodically() {
-  if (millis() - lastTimePrinted >= 10000) {  // Every 10 seconds
-      lastTimePrinted = millis();
+
+void printTime() {
       String currentTime = getTimeString();
       Serial.println("Current Time: " + currentTime);
-  }
 }
 
 // Function to check for an alarm ring

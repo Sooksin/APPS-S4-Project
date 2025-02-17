@@ -21,7 +21,7 @@ void wifi_init(void);
 bool interval_flag(int interval);
 bool Wifiupdate_flag();
 int alarm_ring(int *nmr);
-void printTimePeriodically();  // Function to print time every 10s
+void printTime();  // Function to print time every 10s
 int checkAlarmRing(int* alarmIndex);  // Function to check for alarm
 
 // NTP settings

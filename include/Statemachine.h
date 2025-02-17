@@ -3,6 +3,8 @@
 
 // State enum
 enum class State {
+    S_Off,
+    S_Init,
     S_Idle,
     S_Alarm,
     S_SetAlarm,
@@ -14,6 +16,8 @@ enum class State {
   
   // Event enum
   enum class Event {
+    E_Start,
+    E_InitComplete,
     E_AlarmSet,
     E_Meditate,
     E_Speech,
@@ -42,7 +46,7 @@ public:
 
 private:
     State currentState;
-    static const Transition transitions[12];
+    static const Transition transitions[20];
 };
 
 #endif // STATEMACHINE_H
