@@ -5,6 +5,7 @@
 #include "Arduino.h"
 #include "alarmlight.h"
 #include "Buzzer.h"
+#include "Button.h"
 
 #define LED_PIN 13
 #define LED_COUNT 24
@@ -13,7 +14,10 @@
 extern unsigned long rtcStartMillis;  
 NeoPixelRing ring(LED_PIN, LED_COUNT);
 Buzzer buzzer(BUZZER_PIN);
-StateMachine::StateMachine(State initialState) : currentState(initialState), lastState(initialState) {}
+
+StateMachine::StateMachine(State initialState) 
+    : currentState(initialState), lastState(initialState), stateChanged(true) {}
+
 
 bool alarmTriggered = false;  // Flag to track if the alarm LED effect was triggered
 
@@ -37,6 +41,10 @@ const Transition StateMachine::transitions[] = {
 
 State StateMachine::getCurrentState() const {
     return currentState;
+}
+
+State StateMachine::getLastState() const {
+    return lastState;
 }
 
 // Trigger event to transition between states
@@ -64,14 +72,18 @@ void StateMachine::handleStateActions(State state) {
             attemptWiFiConnection();
             rtcStartMillis = millis();
             ring.begin();
+            ring.clear();
             triggerEvent(Event::E_InitComplete);
             break;
 
-        case State::S_Idle:        
-            printTime();
+        case State::S_Idle:  
+        if (currentState != lastState) {
+            Serial.println("Entering Idle mode...");
+        }
+;            ring.fadeToWhite(200, 200);
+            //printTime();
             alarmTriggered = false;
-            ring.clear();
-
+            //ring.clear();
             int alarmIndex;
             if (checkAlarmRing(&alarmIndex) == 1) { 
                 triggerEvent(Event::E_AlarmRing);
@@ -80,13 +92,10 @@ void StateMachine::handleStateActions(State state) {
 
         case State::S_Alarm:
             if (!alarmTriggered) {  
-                Serial.println("Alarm is ringing! Activating buzzer and light.");
-                ring.startFadeToWhite(1000, 200);  // Start non-blocking fade
+                if (currentState != lastState) Serial.println("Alarm is ringing, buzzer is beeping");
                 alarmTriggered = true;
             }
-            
-            // 💡 Keep updating the fade effect while in this state
-            ring.fadeToWhiteStep();  
+             
 
             // Beep every 5 seconds without blocking execution
             if (millis() - lastBeepTime > 2000) {
@@ -97,29 +106,23 @@ void StateMachine::handleStateActions(State state) {
             break;
 
         case State::S_SetAlarm:
-            Serial.println("Entering Set Alarm mode...");
-            tempHours = 0;
-            tempMinutes = 0;
+            if (currentState != lastState) Serial.println("Entering Set Alarm mode...");
             break;
 
         case State::S_AdjustHours:
-            tempHours = (tempHours + 1) % 24;
-            Serial.print("Hours Set: ");
-            Serial.println(tempHours);
+        if (currentState != lastState) Serial.println("Adjusting hours");
             break;
 
         case State::S_AdjustMinutes:
-            tempMinutes = (tempMinutes + 1) % 60;
-            Serial.print("Minutes Set: ");
-            Serial.println(tempMinutes);
+        if (currentState != lastState) Serial.println("Adjusting minutes..");
             break;
 
         case State::S_Meditate:
-            Serial.println("Starting meditation...");
+        if (currentState != lastState) Serial.println("Entering meditate mode...");
             break;
 
         case State::S_Speech:
-            Serial.println("Starting speech exercise...");
+        if (currentState != lastState) Serial.println("Entering speech mode...");
             break;
 
         default:

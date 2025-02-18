@@ -3,52 +3,76 @@
 #include "StateMachine.h"
 #include "timer.h"
 #include "Button.h"
+#include "stdio.h"
 
-
-// Define buttons dynamically
-const int NUM_BUTTONS = 4;
-Button buttons[NUM_BUTTONS] = { Button(27), Button(26), Button(25), Button(33) };  // Assign pins
+Button button;    //instance of the button class
+StateMachine stateMachine(State::S_Init);  // Initialize the state machine
 bool setAlarmFlag = false;
 
-enum ButtonFunctions { SET_ALARM, ADJUST_HOURS, ADJUST_MINUTES, CONFIRM_ALARM };
-StateMachine stateMachine(State::S_Init);  // Initialize the state machine
+int tempHours = 0;
+int tempMinutes = 0;
 
 void setup() {
   Serial.begin(115200);
-  for (int i = 0; i < NUM_BUTTONS; i++) {
-    buttons[i].begin();
-}
   stateMachine.triggerEvent(Event::E_Start);
+  button.begin();
 }
 
 void loop() {
   auto currentState = stateMachine.getCurrentState();
+  auto lastState = stateMachine.getLastState();
 
+  stateMachine.handleStateActions(currentState);
+  
   // Handle Wi-Fi updates
   if (Wifiupdate_flag()) {
     Serial.println("Wi-Fi update triggered.");
     attemptWiFiConnection();
   }
 
-  stateMachine.handleStateActions(currentState);
-
-  //Handle events based on button presses (example)
-  if (buttons[SET_ALARM].isPressed() && setAlarmFlag == false) {
-    stateMachine.triggerEvent(Event::E_AlarmSet);
-    setAlarmFlag = true;
-  }
-
-  if (buttons[ADJUST_HOURS].isPressed()) {
-      stateMachine.triggerEvent(Event::E_PlusPressed);
-  }
-
-  if (buttons[ADJUST_MINUTES].isPressed()) {
-      stateMachine.triggerEvent(Event::E_MinusPressed);
-  }
-
-  if (buttons[SET_ALARM].isPressed() && setAlarmFlag == true) {
+// Handle alarm setting process
+if (button.isAlarmButtonPressed()) {
+  if (!setAlarmFlag) {
+      stateMachine.triggerEvent(Event::E_AlarmSet);
+      setAlarmFlag = true;
+      tempHours = 0;
+      tempMinutes = 0;
+  } else {
       stateMachine.triggerEvent(Event::E_ConfirmAlarm);
-  } 
+      setAlarmFlag = false;
+      
+      char alarmStr[5];  // Buffer for "HHMM" (4 digits + null terminator)
+      sprintf(alarmStr, "%02d%02d", tempHours, tempMinutes);  // Ensures leading zeros
+
+      int alarm = atoi(alarmStr);  // Convert "HHMM" string to an integer (0905 → 905)
+      
+      Serial.print("Alarm set for: ");
+      Serial.println(alarm);  // Prints correctly formatted HHMM
+  }
+  button.clearAlarmButtonFlag();
+}
+
+  if (button.isSnoozeButtonPressed() && setAlarmFlag == true) {
+    stateMachine.triggerEvent(Event::E_Wake);
+    button.clearSnoozeButtonFlag();
+  }
+
+    // Adjust hours and minutes only when setting alarm
+    if (setAlarmFlag) {
+      if (button.isMinusButtonPressed()) {
+          tempHours = (tempHours + 1) % 24;  // Loop hours 0-23
+          Serial.print("Temp Hours: ");
+          Serial.println(tempHours);
+          button.clearMinusButtonFlag();
+      }
+
+      if (button.isPlusButtonPressed()) {
+          tempMinutes = (tempMinutes + 1) % 60;  // Loop minutes 0-59
+          Serial.print("Temp Minutes: ");
+          Serial.println(tempMinutes);
+          button.clearPlusButtonFlag();
+      }
+  }
 
   // if (/* condition for meditate button */) {
   //   stateMachine.triggerEvent(Event::E_Meditate);
@@ -56,10 +80,6 @@ void loop() {
 
   // if (/* condition for speech button */) {
   //   stateMachine.triggerEvent(Event::E_Speech);
-  // }
-
-  // if (/* condition for wake up from alarm */) {
-  //   stateMachine.triggerEvent(Event::E_Wake);
   // }
 
   delay(100);  // Short delay to prevent CPU overuse

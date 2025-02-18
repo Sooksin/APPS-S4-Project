@@ -43,10 +43,12 @@ public:
     void triggerEvent(Event event);
     void handleStateActions(State state);
     State getCurrentState() const;
+    State getLastState() const;
 
 private:
     State currentState;
     State lastState;
+    bool stateChanged;
     static const Transition transitions[20];
     int selectedAlarmTime = 0;  // Stores alarm time in HHMM format
 };
