@@ -79,8 +79,8 @@ void StateMachine::handleStateActions(State state) {
         case State::S_Idle:  
         if (currentState != lastState) {
             Serial.println("Entering Idle mode...");
-        }
-;            ring.fadeToWhite(200, 200);
+            }
+            ring.fadeToWhite(200, 200);
             //printTime();
             alarmTriggered = false;
             //ring.clear();
