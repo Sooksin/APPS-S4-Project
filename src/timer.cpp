@@ -1,16 +1,88 @@
 #include "timer.h"
 
-// Variables for software RTC (starting at 00:00:00)
-unsigned long rtcStartMillis = 0;      // The time when the software RTC started
-bool ntpSynced = false;                // Flag to check if NTP has been synced
-struct tm softwareRTC = { 0 };         // Software RTC time structure
+// ===================== GLOBAL VARIABLES =====================
+unsigned long rtcStartMillis = 0;      // RTC start timestamp
+bool ntpSynced = false;                // Flag for NTP sync status
+struct tm softwareRTC = { 0 };         // Local software RTC
 const char *ntp_s = "pool.ntp.org";   // NTP server
-const char *ssid_STA = "STIJN 9916"; // Wi-Fi SSID
-const char *password_STA = "1234567890"; // Wi-Fi password
+const char *ssid_STA = "STIJN 9916";  // Wi-Fi SSID
+const char *password_STA = "1234567890"; // Wi-Fi Password
 char wifiname[20] = "APPS_Buddy";
+
 unsigned long prev_sec;
-int alarms[MAX_NUM_ALARMS] = {1525, 1140, 2300, 0600, 1335};  // Example alarms
-unsigned long lastTimePrinted = 0;  // Store the last time the time was printed
+unsigned long lastTimePrinted = 0;  // Store last printed time
+
+// Alarm storage
+int alarms[MAX_NUM_ALARMS] = {1052};  // Example alarms
+int alarmCount = 5;  // Current number of alarms
+
+
+// Add a new alarm (time format: HHMM)
+bool addAlarm(int time) {
+    if (alarmCount >= MAX_NUM_ALARMS) {
+        Serial.println("Alarm list is full!");
+        return false;
+    }
+
+    // Check if alarm already exists
+    for (int i = 0; i < alarmCount; i++) {
+        if (alarms[i] == time) {
+            Serial.println("Alarm already set!");
+            return false;
+        }
+    }
+
+    alarms[alarmCount] = time;
+    alarmCount++;
+    Serial.print("Alarm added: ");
+    Serial.println(time);
+    return true;
+}
+
+// Remove an existing alarm
+bool removeAlarm(int time) {
+    for (int i = 0; i < alarmCount; i++) {
+        if (alarms[i] == time) {
+            for (int j = i; j < alarmCount - 1; j++) {
+                alarms[j] = alarms[j + 1]; // Shift elements
+            }
+            alarmCount--;
+            Serial.print("Alarm removed: ");
+            Serial.println(time);
+            return true;
+        }
+    }
+    Serial.println("Alarm not found!");
+    return false;
+}
+
+// Retrieve current alarms as a formatted string
+String getAlarms() {
+    if (alarmCount == 0) {
+        return "No alarms set";
+    }
+
+    String alarmList = "Alarms: ";
+    for (int i = 0; i < alarmCount; i++) {
+        int hours = alarms[i] / 100;
+        int minutes = alarms[i] % 100;
+        alarmList += String(hours) + ":" + (minutes < 10 ? "0" : "") + String(minutes);
+        if (i < alarmCount - 1) {
+            alarmList += ", ";
+        }
+    }
+    return alarmList;
+}
+
+// Function to check for millis on a specific interval (replaces the need to have large if statements in the state machine)
+bool interval_flag(int interval) {
+  unsigned long cur_sec = millis();
+  if ((cur_sec - prev_sec) > interval) {
+    prev_sec = cur_sec; 
+    return true;
+  }
+  return false;
+}
 
 // Function to set Wi-Fi name
 void wifi_init() {
@@ -26,16 +98,6 @@ void printTime() {
 // Function to check for an alarm ring
 int checkAlarmRing(int* alarmIndex) {
   return alarm_ring(alarmIndex);  // Call existing alarm function
-}
-
-// Function to check for millis on a specific interval (replaces the need to have large if statements in the state machine)
-bool interval_flag(int interval) {
-  unsigned long cur_sec = millis();
-  if ((cur_sec - prev_sec) > interval) {
-    prev_sec = cur_sec; 
-    return true;
-  }
-  return false;
 }
 
 bool Wifiupdate_flag() { // Sets a flag when Wi-Fi should update
@@ -106,12 +168,12 @@ String getTimeString() {
     }
   
     // Print raw time values for debugging
-    Serial.print("Time: ");
-    Serial.print(timeInfo.tm_hour);
-    Serial.print(":");
-    Serial.print(timeInfo.tm_min);
-    Serial.print(":");
-    Serial.println(timeInfo.tm_sec);
+    // Serial.print("Time: ");
+    // Serial.print(timeInfo.tm_hour);
+    // Serial.print(":");
+    // Serial.print(timeInfo.tm_min);
+    // Serial.print(":");
+    // Serial.println(timeInfo.tm_sec);
   
     char timeString[26];
     strftime(timeString, sizeof(timeString), "%Y-%m-%d %H:%M:%S", &timeInfo);

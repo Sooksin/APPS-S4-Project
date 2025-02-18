@@ -2,11 +2,22 @@
 #include <time.h>
 #include "StateMachine.h"
 #include "timer.h"
+#include "Button.h"
 
+
+// Define buttons dynamically
+const int NUM_BUTTONS = 4;
+Button buttons[NUM_BUTTONS] = { Button(27), Button(26), Button(25), Button(33) };  // Assign pins
+bool setAlarmFlag = false;
+
+enum ButtonFunctions { SET_ALARM, ADJUST_HOURS, ADJUST_MINUTES, CONFIRM_ALARM };
 StateMachine stateMachine(State::S_Init);  // Initialize the state machine
 
 void setup() {
   Serial.begin(115200);
+  for (int i = 0; i < NUM_BUTTONS; i++) {
+    buttons[i].begin();
+}
   stateMachine.triggerEvent(Event::E_Start);
 }
 
@@ -21,10 +32,23 @@ void loop() {
 
   stateMachine.handleStateActions(currentState);
 
-  // Handle events based on button presses (example)
-  // if (/* condition for alarm set button */) {
-  //   stateMachine.triggerEvent(Event::E_AlarmSet);
-  // }
+  //Handle events based on button presses (example)
+  if (buttons[SET_ALARM].isPressed() && setAlarmFlag == false) {
+    stateMachine.triggerEvent(Event::E_AlarmSet);
+    setAlarmFlag = true;
+  }
+
+  if (buttons[ADJUST_HOURS].isPressed()) {
+      stateMachine.triggerEvent(Event::E_PlusPressed);
+  }
+
+  if (buttons[ADJUST_MINUTES].isPressed()) {
+      stateMachine.triggerEvent(Event::E_MinusPressed);
+  }
+
+  if (buttons[SET_ALARM].isPressed() && setAlarmFlag == true) {
+      stateMachine.triggerEvent(Event::E_ConfirmAlarm);
+  } 
 
   // if (/* condition for meditate button */) {
   //   stateMachine.triggerEvent(Event::E_Meditate);
@@ -36,19 +60,6 @@ void loop() {
 
   // if (/* condition for wake up from alarm */) {
   //   stateMachine.triggerEvent(Event::E_Wake);
-  // }
-
-  // // Check for the plus/minus button press for hour/minute adjustment
-  // if (/* condition for plus button */) {
-  //   stateMachine.triggerEvent(Event::E_PlusPressed);
-  // }
-
-  // if (/* condition for minus button */) {
-  //   stateMachine.triggerEvent(Event::E_MinusPressed);
-  // }
-
-  // if (/* condition for minus button */) {
-  //   stateMachine.triggerEvent(Event::E_ConfirmAlarm);
   // }
 
   delay(100);  // Short delay to prevent CPU overuse

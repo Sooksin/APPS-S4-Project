@@ -46,7 +46,9 @@ public:
 
 private:
     State currentState;
+    State lastState;
     static const Transition transitions[20];
+    int selectedAlarmTime = 0;  // Stores alarm time in HHMM format
 };
 
 #endif // STATEMACHINE_H
