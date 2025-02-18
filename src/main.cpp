@@ -64,6 +64,7 @@ if (button.isAlarmButtonPressed()) {
           Serial.print("Temp Hours: ");
           Serial.println(tempHours);
           button.clearMinusButtonFlag();
+          stateMachine.triggerEvent(Event::E_MinusPressed);          
       }
 
       if (button.isPlusButtonPressed()) {
@@ -71,6 +72,7 @@ if (button.isAlarmButtonPressed()) {
           Serial.print("Temp Minutes: ");
           Serial.println(tempMinutes);
           button.clearPlusButtonFlag();
+          stateMachine.triggerEvent(Event::E_PlusPressed);  
       }
   }
 

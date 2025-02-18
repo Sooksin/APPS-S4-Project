@@ -11,7 +11,7 @@
 void syncTime();
 void updateSoftwareRTC();
 // Function to get the current time as a formatted string
-String getTimeString();
+char* getTimeString();
 
 // Function to attempt Wi-Fi connection and sync time
 void WiFiEvent(WiFiEvent_t event);

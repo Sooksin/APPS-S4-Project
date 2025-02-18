@@ -13,7 +13,7 @@ unsigned long prev_sec;
 unsigned long lastTimePrinted = 0;  // Store last printed time
 
 // Alarm storage
-int alarms[MAX_NUM_ALARMS] = {1052};  // Example alarms
+int alarms[MAX_NUM_ALARMS] = {};  // Example alarms
 int alarmCount = 5;  // Current number of alarms
 
 
@@ -152,33 +152,24 @@ void syncTime() {
   }
 }
 
-String getTimeString() {
-    struct tm timeInfo;
-  
-    // Check if time has been synced with NTP
-    if (!ntpSynced) {
-      // If not synced, use the software RTC
+char* getTimeString() {
+  static char timeString[6];  // "HH:MM" + null terminator
+  struct tm timeInfo;
+
+  // Check if time has been synced with NTP
+  if (!ntpSynced) {
       updateSoftwareRTC();
       timeInfo = softwareRTC;
-    } else {
-      // Use the NTP-synced time if available
+  } else {
       if (!getLocalTime(&timeInfo)) {
-        return "Failed to obtain time";
+          return (char*)"Failed";
       }
-    }
-  
-    // Print raw time values for debugging
-    // Serial.print("Time: ");
-    // Serial.print(timeInfo.tm_hour);
-    // Serial.print(":");
-    // Serial.print(timeInfo.tm_min);
-    // Serial.print(":");
-    // Serial.println(timeInfo.tm_sec);
-  
-    char timeString[26];
-    strftime(timeString, sizeof(timeString), "%Y-%m-%d %H:%M:%S", &timeInfo);
-    return String(timeString);
   }
+
+  // Format only HH:MM
+  strftime(timeString, sizeof(timeString), "%H:%M", &timeInfo);
+  return timeString;
+}
   
 
 // Function to attempt Wi-Fi connection
